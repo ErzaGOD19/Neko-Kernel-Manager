@@ -1,4 +1,5 @@
 #include "theme-manager.hpp"
+#include "utils.hpp"
 
 #include <QDir>
 #include <QFile>
@@ -46,7 +47,7 @@ static QColor parseValue(QString v, const QHash<QString, QString> &raw, int dept
 }
 
 ThemeManager::ThemeManager(QObject *parent) : QObject(parent) {
-    m_dir = QDir::homePath() + "/.config/gtk-4.0";
+    m_dir = QString::fromStdString(utils::getRealHome()) + "/.config/gtk-4.0";
     // gtk.css is where matugen / pywal / libadwaita write; noctalia.css is what
     // gtk.css @imports for Noctalia. Later files win, matching GTK's load order.
     m_files = { m_dir + "/gtk.css", m_dir + "/noctalia.css" };

@@ -23,6 +23,8 @@ public:
     std::string size() const;
     std::string installDate() const;
     std::string name() const { return m_pkg.name; }
+    std::string type() const { return m_pkg.type; }
+    void set_installed(bool inst) { m_pkg.is_installed = inst; }
 
     static std::vector<Kernel> getKernels();
 

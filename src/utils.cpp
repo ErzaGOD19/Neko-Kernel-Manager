@@ -106,68 +106,6 @@ std::string join(const std::vector<std::string> &v, const std::string &delim) {
     return result;
 }
 
-std::vector<std::string> fetchKernelOrgVersions(const std::string &variant) {
-    std::vector<std::string> versions;
-    const std::string url = "https://www.kernel.org/releases.json";
-
-    std::string cmd = "curl -sSf " + url + " | python3 -c 'import sys, json; d=json.load(sys.stdin); ";
-    if (variant == "stable") {
-        cmd += "print(*(r[\"version\"] for r in d[\"releases\"] if r.get(\"moniker\") == \"stable\"), sep=\"\\n\")'";
-    } else if (variant == "lts") {
-        cmd += "print(*(r[\"version\"] for r in d[\"releases\"] if r.get(\"moniker\") == \"longterm\"), sep=\"\\n\")'";
-    } else if (variant == "mainline") {
-        cmd += "print(*(r[\"version\"] for r in d[\"releases\"] if r.get(\"moniker\") == \"mainline\"), sep=\"\\n\")'";
-    } else {
-        cmd += "print(*(r[\"version\"] for r in d[\"releases\"]), sep=\"\\n\")'";
-    }
-
-    const std::string output = exec(cmd);
-    for (const auto &line : split(output, '\n')) {
-        if (!line.empty()) {
-            versions.push_back(line);
-        }
-    }
-    return versions;
-}
-
-bool downloadFile(const std::string &url, const std::string &dest) {
-    const std::string cmd = "mkdir -p $(dirname '" + dest + "') && curl -L -o '" + dest + "' '" + url + "'";
-    return system(cmd.c_str()) == 0;
-}
-
-std::string kernelOrgDownloadUrl(const std::string &variant, const std::string &version) {
-    (void)variant; // The path layout on kernel.org is based on the major version, so variant does not change the URL for current kernels.
-    const std::string base = "https://cdn.kernel.org/pub/linux/kernel";
-    size_t firstDot = version.find('.');
-    if (firstDot == std::string::npos) return "";
-
-    const std::string major = version.substr(0, firstDot);
-    std::string path = "/v" + major + ".x";
-    if (major == "2") path = "/v2.6";
-
-    return base + path + "/linux-" + version + ".tar.xz";
-}
-
-bool gitClone(const std::string &repoUrl, const std::string &dest) {
-    // Ensure parent directory exists
-    std::string parentDir = dest.substr(0, dest.find_last_of('/'));
-    system(("mkdir -p " + parentDir).c_str());
-    
-    const std::string cmd = "rm -rf '" + dest + "' && git clone --depth 1 " + repoUrl + " '" + dest + "' 2>&1";
-    
-    // We want to capture errors to debug why it fails
-    FILE* pipe = popen(cmd.c_str(), "r");
-    if (!pipe) return false;
-    
-    char buffer[256];
-    while (fgets(buffer, sizeof(buffer), pipe)) {
-        // Output is not easily returned here, but we can print to stderr or just rely on the exit code
-        // For now, let's just ensure we wait for it.
-    }
-    
-    return pclose(pipe) == 0;
-}
-
 bool commandExists(const std::string &cmd) {
     QString escaped = QString::fromStdString(cmd).replace("'", "'\\''");
     return QProcess::execute("sh", {"-c", "command -v '" + escaped + "' >/dev/null 2>&1"}) == 0;
